@@ -11,7 +11,7 @@ export const clockIn = async (req, res, next) => {
     try{
         const { id, shift } = req.user
         
-        const attendanceExist = await Attendances?.findOne({where : {userId : id}})
+        const attendanceExist = await Attendances?.findOne({where : {userId : id,date :`'${moment().format("YYYY-MM-DD")}`}})
        
         if(attendanceExist) throw({
             status : errorMiddleware.BAD_REQUEST_STATUS,
@@ -151,17 +151,17 @@ export const clockOut = async (req, res, next) => {
 
 export const historyAttendance = async (req, res, next) => {
     try{
-        const { page, date, startDate, endDate} = req.query
+        const { page, date, startDate, endDate, employeeId} = req.query
 
         const options = { offset: page > 1 ? parseInt(page - 1) * 5 : 0, }
 
         page ? options.limit = 5 : ""
 
-        const filter = {userId : req.user.id}
+        const filter = {userId : employeeId ? employeeId : req.user.id}
 
         date ? filter.date = `'${date}'` : ""
 
-        startDate ? Object.assign(filter,{date :{[Op.between]: [startDate, endDate]}}):""
+        startDate && endDate ? Object.assign(filter,{date :{[Op.between]: [startDate, endDate]}}):""
 
         const history = await Attendances.findAll({
             ...options,

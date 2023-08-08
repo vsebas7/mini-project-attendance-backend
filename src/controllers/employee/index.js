@@ -10,6 +10,7 @@ import * as encryption from "../../helpers/encryption.js"
 import * as tokenHelper from "../../helpers/token.js"
 import * as errorMiddleware from "../../middleware/error.handler.js"
 import db from "../../models/index.js"
+import { Op } from "sequelize"
 
 export const registerEmployee = async (req, res, next) => {
     const transaction = await db.sequelize.transaction();
@@ -120,14 +121,17 @@ export const activateEmployee = async(req, res, next)=>{
 
 export const allEmployee = async (req, res, next) => {
     try {
-        const { page } = req.query
+        const { page, screening } = req.query
         const options = {
             offset: page > 1 ? parseInt(page - 1) * 10 : 0,
             limit : 10
         }
+        const filter = {roleId:2}
+        screening ? Object.assign(filter,{[Op.or] : [{username:{[Op.like]: `%${screening}%`}},{email:{[Op.like]: `%${screening}%`}}]}) :""
+        
         const employee = await User.findAll({
             ...options,
-            where : {roleId : 2},
+            where : filter,
             attributes :{exclude : ['password','status','roleId']},
             include : [
                 {
