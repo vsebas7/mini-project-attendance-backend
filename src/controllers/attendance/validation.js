@@ -7,7 +7,7 @@ export const ClockInValidationSchema = Yup.object({
         .matches(/^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/,"Date is invalid"),
     clock_in : Yup.string()
         .required("Clock in time is required")
-        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/,"Clock in time is invalid")
+        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/,"Clock in time is invalid")
 })
 
 export const ClockOutValidationSchema = Yup.object({
@@ -16,5 +16,5 @@ export const ClockOutValidationSchema = Yup.object({
         .matches(/^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/,"Date is invalid"),
     clock_out : Yup.string()
         .required("Clock in time is required")
-        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/,"Clock in time is invalid")
+        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/,"Clock in time is invalid")
 })

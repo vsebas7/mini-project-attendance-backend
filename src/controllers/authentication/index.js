@@ -1,5 +1,5 @@
 import { ValidationError } from "yup"
-import { Salaries, User } from "../../models/all_models.js"
+import { User } from "../../models/all_models.js"
 import handlebars from "handlebars"
 import fs from "fs"
 import path from "path"
@@ -38,7 +38,8 @@ export const login = async (req, res, next) => {
         const accessToken = tokenHelper.createToken({ 
             id: userExists?.dataValues?.id, 
             email : userExists?.dataValues?.email,
-            shift : userExists?.dataValues?.shiftHourId
+            shift : userExists?.dataValues?.shiftHourId,
+            roleId : userExists?.dataValues?.roleId
         });
         
         delete userExists?.dataValues?.password;
@@ -48,7 +49,7 @@ export const login = async (req, res, next) => {
             .json({ 
                 type : "success",
                 message : "Data berhasil dimuat",
-                account : userExists 
+                user : userExists 
             })
 
     } catch (error) {
@@ -67,7 +68,7 @@ export const keepLogin = async (req, res, next) => {
         const user = await User?.findOne(
             { 
                 where : {
-                    id : req.user
+                    id : req.user.id
                 },
                 attributes : {
                     exclude : ["password"]
@@ -78,7 +79,7 @@ export const keepLogin = async (req, res, next) => {
         res.status(200).json({ 
             type : "success",
             message : "Data berhasil dimuat",
-            accunt : user
+            user : user
         })
     } catch (error) {
         next(error)
@@ -186,155 +187,6 @@ export const resetPassword = async (req, res, next) => {
             })
         }
 
-        next(error)
-    }
-}
-
-export const registerUser = async (req, res, next) => {
-    const transaction = await db.sequelize.transaction();
-    try {
-        const { email, salary } = req.body;
-
-        await validation.RegisterValidationSchema.validate(req.body);
-
-        const userExists = await User?.findOne({ 
-            where: { 
-                email
-            } 
-        });
-
-        if (userExists) throw ({
-            type : "error",
-            status : errorMiddleware.BAD_REQUEST_STATUS, 
-            message : errorMiddleware.EMAIL_ALREADY_EXISTS 
-        });
-
-        delete req.body.salary
-
-        const user = await User?.create(req.body);
-
-        const accessToken = tokenHelper.createToken({ 
-            id : user?.dataValues?.id,
-            email : user?.dataValues?.email,
-        });
-
-        const salaries = await Salaries?.create({
-            userId : user?.dataValues?.id,
-            salary
-        });
-
-        const template = fs.readFileSync(path.join(process.cwd(), "templates", "email.html"), "utf8");
-
-        const message  = handlebars.compile(template)({ link : `http://localhost:3000/active-account/${accessToken}` })
-
-        const mailOptions = {
-            from: config.GMAIL,
-            to: email,
-            subject: "Activate Your Account",
-            html: message
-        }
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) throw error;
-            console.log("Email sent: " + info.response);
-        })
-
-        res.status(200).json({
-            type : "success",
-            message: "Activate account via the link sent to that email ",
-            user,
-            salaries
-        });
-
-        await transaction.commit();
-
-    } catch (error) {
-        await transaction.rollback();
-
-        if (error instanceof ValidationError) {
-            return next({
-                status : errorMiddleware.BAD_REQUEST_STATUS, 
-                message : error?.errors?.[0]
-            })
-        }
-
-        next(error)
-    }
-}
-
-export const activateUser = async(req, res, next)=>{
-    const transaction = await db.sequelize.transaction()
-    try {
-        const { email } = req.user
-
-        await validation.ActivateUserValidationSchema.validate(req.body)
-
-        await Object.assign(req.body,{
-            password : encryption.hashPassword(req.body.password),
-            status : 1
-        })
-
-        const user = await User?.update(
-            req.body,
-            {
-                where: {
-                    email
-                }
-            }
-        )
-
-        res.status(200).json({
-            type : "success",
-            message: "Account activated successfully",
-            accunt : user
-        });
-
-        await transaction.commit()
-    } catch(error){
-        await transaction.rollback()
-
-        next(error)
-    }
-
-}
-
-export const allEmployee = async (req, res, next) => {
-    try {
-        const { page } = req.query
-
-        const options = {
-            offset: page > 1 ? parseInt(page - 1) * 10 : 0,
-            limit : 10
-        }
-
-        const employee = await User.findAll({
-            ...options,
-            where : {
-                roleId : 2
-            }
-        })
-
-        if(!employee.length) throw ({ 
-            status : errorMiddleware.NOT_FOUND_STATUS, 
-            message : errorMiddleware.DATA_NOT_FOUND 
-        });
-
-        const total = await User?.count({where : {roleId:2}});
-
-        const pages = Math.ceil(total / options.limit);
-        
-        res.status(200).json({
-            type : "success",
-            message : "Data berhasil dimuat",
-            employee : {
-                currentPage: page ? page : 1,
-                totalPage : pages,
-                total_employee : total,
-                employee_limit : options.limit,
-                data : employee
-            }
-        })
-    } catch (error) {
         next(error)
     }
 }
