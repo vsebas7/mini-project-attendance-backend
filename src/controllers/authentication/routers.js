@@ -7,6 +7,6 @@ const router = Router()
 router.post("/login", AuthControllers.login)
 router.get("/keep-login", verifyUser, AuthControllers.keepLogin)
 router.put("/forgot-password", AuthControllers.forgotPassword)
-router.patch("/reset-password", AuthControllers.resetPassword)
+router.patch("/reset-password", verifyUser,AuthControllers.resetPassword)
 
 export default router

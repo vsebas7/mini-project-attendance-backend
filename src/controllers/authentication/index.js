@@ -106,7 +106,7 @@ export const forgotPassword = async (req, res, next) => {
             email : isUserExist?.dataValues?.email,
         });
 
-        const template = fs.readFileSync(path.join(process.cwd(), "templates", "email.html"), "utf8");
+        const template = fs.readFileSync(path.join(process.cwd(), "templates", "resetPass.html"), "utf8");
 
         const message  = handlebars.compile(template)({ link : `http://localhost:3000/reset-password/${accessToken}` })
 
